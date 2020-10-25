@@ -156,7 +156,7 @@ export class Player extends EventEmitter {
 
         let song: Song;
 
-        // SoundCloud
+        // SoundCloud (URL)
 
         if (scdl.isValidUrl(query)) {
             const result = await scdl.getInfo(query);
@@ -173,7 +173,7 @@ export class Player extends EventEmitter {
             return song;
         }
 
-        // YouTube
+        // YouTube (URL, fallback search)
 
         try {
             const videoId = ytdl.getURLVideoID(query);
@@ -204,7 +204,7 @@ export class Player extends EventEmitter {
     }
     shutdown() {
         this.emit('goodbye');
-        this.connection.disconnect();
+        this.connection?.disconnect();
         players.delete(this.connection.channel.guild);
     }
     duration() {
