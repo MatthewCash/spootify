@@ -27,7 +27,7 @@ export const execute: Command['execute'] = async (bot, message, args) => {
         );
     }
 
-    message.channel.send(`⏩ Skipping \`${currentItem.raw.title}\``);
+    message.channel.send(`⏩ Skipping \`${currentItem.title}\``);
 
     player.playNextSong();
 };
