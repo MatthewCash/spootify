@@ -129,11 +129,12 @@ export class Player extends EventEmitter {
                 filter: 'audioonly'
             });
         } else if (song.type === SongType.SOUNDCLOUD) {
-            song.stream = await scdl.downloadFormat(
-                song.url,
-                scdl.FORMATS.OPUS
-            );
+            song.stream = await scdl
+                .downloadFormat(song.url, scdl.FORMATS.OPUS)
+                .catch(() => null);
         }
+
+        if (!song.stream) return this.emit('done');
 
         this.dispatcher = this.connection.play(song.stream);
 
@@ -167,7 +168,7 @@ export class Player extends EventEmitter {
                 author: result.user.username,
                 views: result.playback_count,
                 admin,
-                duration: result.duration,
+                duration: Math.floor(result.duration / 1000),
                 image: result.artwork_url
             };
             return song;
