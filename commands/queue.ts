@@ -17,7 +17,7 @@ export const execute: Command['execute'] = async (bot, message, args) => {
     }
 
     const formattedQueue = player.queue.map(song => ({
-        title: song.raw.title,
+        title: song.title,
         duration: getFormattedTime(song.duration)
     }));
 

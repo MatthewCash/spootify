@@ -54,16 +54,16 @@ export const execute: Command['execute'] = async (bot, message, args) => {
     player.addToQueue(song);
 
     const addedEmbed = new Discord.MessageEmbed({
-        title: song.raw.title,
+        title: song.title,
         description: 'New song added to Queue',
         color: 0x009900,
         thumbnail: {
-            url: song.raw.image
+            url: song.image
         },
         fields: [
             {
                 name: 'Views',
-                value: song.raw.views.toLocaleString('en'),
+                value: song.views.toLocaleString('en'),
                 inline: true
             },
             {
@@ -73,7 +73,7 @@ export const execute: Command['execute'] = async (bot, message, args) => {
             },
             {
                 name: 'Artist',
-                value: song.raw.author.name,
+                value: song.author,
                 inline: true
             }
         ]

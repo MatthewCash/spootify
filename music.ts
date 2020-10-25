@@ -1,28 +1,48 @@
-import Discord from 'discord.js';
+import Discord, { ShardClientUtil } from 'discord.js';
 import { EventEmitter } from 'events';
 import { Readable } from 'stream';
 import ytSearch from 'yt-search';
 import ytdl from 'ytdl-core';
+import scdl from 'soundcloud-downloader';
 
 enum SongType {
     YOUTUBE,
-    SOUNDCLOUD // Not Implemented
+    SOUNDCLOUD
 }
 interface Song {
     type: SongType;
     url: string;
+    title: string;
+    author: string;
+    views: number;
     admin: boolean;
     duration: number;
     stream?: Readable;
-    raw: ytSearch.VideoSearchResult | ytSearch.VideoMetadataResult;
+    image: string;
 }
 
-type Queue = Song[];
+class Queue<T> extends Array<T> {
+    constructor(items?: T[]) {
+        super(...items);
+    }
+    static create<T>(): Queue<T> {
+        return Object.create(Queue.prototype);
+    }
+    get() {
+        return this.shift();
+    }
+    peek() {
+        return this[0];
+    }
+    add(item: T) {
+        return this.push(item);
+    }
+}
 
 // Events
 export declare interface Player {
     on(event: 'added', listener: (song: Song) => void);
-    on(event: 'done', listener: (song: Song) => void);
+    on(event: 'done', listener: (song?: Song) => void);
     on(event: 'processing', listener: (song: Song) => void);
     on(
         event: 'playing',
@@ -32,7 +52,7 @@ export declare interface Player {
 }
 
 export class Player extends EventEmitter {
-    queue: Queue;
+    queue: Queue<Song>;
     playing: boolean;
     connection: Discord.VoiceConnection;
     currentItem?: Song;
@@ -42,7 +62,7 @@ export class Player extends EventEmitter {
         super();
 
         this.connection = connection;
-        this.queue = [];
+        this.queue = Queue.create<Song>();
         this.playing = false;
         this.loop = false;
 
@@ -52,7 +72,7 @@ export class Player extends EventEmitter {
     }
     async startProcessingQueue() {
         while (this.connection?.status === 0) {
-            let loopSong: Song;
+            let lastSong: Song;
             if (!this.currentItem) {
                 const song = await Promise.race([
                     new Promise(r => this.on('added', r)), // Wait for new item in queue
@@ -64,15 +84,20 @@ export class Player extends EventEmitter {
                     break;
                 }
             } else {
-                loopSong = await new Promise<Song>(r => this.on('done', r));
+                lastSong = await new Promise<Song>(r => this.on('done', r));
             }
+
+            this.currentItem = null;
+            this.playing = false;
+
+            // Shutdown player if there are no members in channel
             if (this.connection.channel.members.size === 0) {
                 this.shutdown();
                 break;
             }
-            // Looping is not implemented yet
-            if (loopSong && this.loop) {
-                this.playSong(loopSong);
+
+            if (this.loop && lastSong) {
+                this.playSong(lastSong);
             } else {
                 this.playNextSong();
             }
@@ -80,29 +105,37 @@ export class Player extends EventEmitter {
         this.shutdown();
     }
     playNextSong() {
-        if (this.connection?.status !== 0) return;
-
-        const nextSong = this.queue.shift();
+        const nextSong = this.queue.get();
 
         if (!nextSong) {
-            if (this.playing) this.pause();
+            if (this.playing) {
+                this.dispatcher?.end();
+                this.emit('done');
+            }
             return;
         }
 
         this.playSong(nextSong);
     }
-    playSong(song: Song) {
+    async playSong(song: Song) {
         if (this.connection?.status !== 0) return;
 
         this.currentItem = song;
 
         this.emit('processing', this.currentItem);
 
-        this.currentItem.stream = ytdl(this.currentItem.url, {
-            filter: 'audioonly'
-        });
+        if (song.type === SongType.YOUTUBE) {
+            song.stream = ytdl(song.url, {
+                filter: 'audioonly'
+            });
+        } else if (song.type === SongType.SOUNDCLOUD) {
+            song.stream = await scdl.downloadFormat(
+                song.url,
+                scdl.FORMATS.OPUS
+            );
+        }
 
-        this.dispatcher = this.connection.play(this.currentItem.stream);
+        this.dispatcher = this.connection.play(song.stream);
 
         this.playing = true;
         this.emit('playing', this.dispatcher);
@@ -121,6 +154,27 @@ export class Player extends EventEmitter {
     static async search(query: string, admin = false): Promise<Song> {
         let result: ytSearch.VideoSearchResult | ytSearch.VideoMetadataResult;
 
+        let song: Song;
+
+        // SoundCloud
+
+        if (scdl.isValidUrl(query)) {
+            const result = await scdl.getInfo(query);
+            song = {
+                type: SongType.SOUNDCLOUD,
+                url: result.permalink_url,
+                title: result.title,
+                author: result.user.username,
+                views: result.playback_count,
+                admin,
+                duration: result.duration,
+                image: result.artwork_url
+            };
+            return song;
+        }
+
+        // YouTube
+
         try {
             const videoId = ytdl.getURLVideoID(query);
             result = await ytSearch({ videoId });
@@ -131,18 +185,21 @@ export class Player extends EventEmitter {
 
         if (!result) return;
 
-        const song: Song = {
+        song = {
             type: SongType.YOUTUBE,
             url: result.url,
+            title: result.title,
+            author: result.author.name,
+            views: result.views,
             admin,
             duration: result.duration.seconds,
-            raw: result
+            image: result.image
         };
 
         return song;
     }
     addToQueue(song: Song) {
-        this.queue.push(song);
+        this.queue.add(song);
         this.emit('added', song);
     }
     shutdown() {
