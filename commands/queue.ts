@@ -4,10 +4,12 @@ import { Player, players } from '../music';
 
 // 123 -> 2:03
 export const getFormattedTime = (totalSeconds: number): string => {
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds - minutes * 60;
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds - hours * 3600) / 60);
+    const seconds = totalSeconds - hours * 3600 - minutes * 60;
+    const paddedMinutes = String(minutes).padStart(2, '0');
     const paddedSeconds = String(seconds).padStart(2, '0');
-    return `${minutes}:${paddedSeconds}`;
+    return `${hours}:${paddedMinutes}:${paddedSeconds}`;
 };
 
 export const execute: Command['execute'] = async (bot, message, args) => {
