@@ -1,4 +1,4 @@
-import Discord, { ShardClientUtil } from 'discord.js';
+import Discord from 'discord.js';
 import { EventEmitter } from 'events';
 import { Readable } from 'stream';
 import ytSearch from 'yt-search';
@@ -153,15 +153,11 @@ export class Player extends EventEmitter {
         this.playing = true;
     }
     static async search(query: string, admin = false): Promise<Song> {
-        let result: ytSearch.VideoSearchResult | ytSearch.VideoMetadataResult;
-
-        let song: Song;
-
         // SoundCloud (URL)
 
         if (scdl.isValidUrl(query)) {
             const result = await scdl.getInfo(query);
-            song = {
+            const song: Song = {
                 type: SongType.SOUNDCLOUD,
                 url: result.permalink_url,
                 title: result.title,
@@ -175,6 +171,7 @@ export class Player extends EventEmitter {
         }
 
         // YouTube (URL, fallback search)
+        let result: ytSearch.VideoSearchResult | ytSearch.VideoMetadataResult;
 
         try {
             const videoId = ytdl.getURLVideoID(query);
@@ -186,7 +183,7 @@ export class Player extends EventEmitter {
 
         if (!result) return;
 
-        song = {
+        const song: Song = {
             type: SongType.YOUTUBE,
             url: result.url,
             title: result.title,
