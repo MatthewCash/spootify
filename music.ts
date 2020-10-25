@@ -4,8 +4,12 @@ import { Readable } from 'stream';
 import ytSearch from 'yt-search';
 import ytdl from 'ytdl-core';
 
+enum SongType {
+    YOUTUBE,
+    SOUNDCLOUD // Not Implemented
+}
 interface Song {
-    type: 'youtube' | 'soundcloud';
+    type: SongType;
     url: string;
     admin: boolean;
     duration: number;
@@ -46,9 +50,6 @@ export class Player extends EventEmitter {
 
         this.connection.once('disconnect', this.shutdown);
     }
-    // get playing() {
-    //     return !this.dispatcher?.paused
-    // }
     async startProcessingQueue() {
         while (this.connection?.status === 0) {
             let loopSong: Song;
@@ -69,6 +70,7 @@ export class Player extends EventEmitter {
                 this.shutdown();
                 break;
             }
+            // Looping is not implemented yet
             if (loopSong && this.loop) {
                 this.playSong(loopSong);
             } else {
@@ -130,7 +132,7 @@ export class Player extends EventEmitter {
         if (!result) return;
 
         const song: Song = {
-            type: 'youtube',
+            type: SongType.YOUTUBE,
             url: result.url,
             admin,
             duration: result.duration.seconds,
@@ -151,9 +153,6 @@ export class Player extends EventEmitter {
     duration() {
         return this.dispatcher.streamTime;
     }
-    // playing() {
-    //     return this.dispatcher && !this.dispatcher.paused
-    // }
 }
 
 export const players = new WeakMap<Discord.Guild, Player>();
