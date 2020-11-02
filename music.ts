@@ -69,6 +69,7 @@ export class Player extends EventEmitter {
         this.startProcessingQueue();
 
         this.connection.once('disconnect', this.shutdown);
+        this.connection.once('closing', this.shutdown);
     }
     async startProcessingQueue() {
         while (this.connection?.status === 0) {
