@@ -58,10 +58,12 @@ export class Player extends EventEmitter {
     currentItem?: Song;
     dispatcher?: Discord.StreamDispatcher;
     loop: boolean;
+    guild: Discord.Guild;
     constructor(connection: Discord.VoiceConnection) {
         super();
 
         this.connection = connection;
+        this.guild = connection.channel.guild;
         this.queue = Queue.create<Song>();
         this.playing = false;
         this.loop = false;
@@ -69,7 +71,7 @@ export class Player extends EventEmitter {
         this.startProcessingQueue();
 
         this.connection.once('disconnect', this.shutdown);
-        this.connection.once('closing', this.shutdown);
+        // this.connection.once('closing', this.shutdown);
     }
     async startProcessingQueue() {
         while (this.connection?.status === 0) {
@@ -137,7 +139,9 @@ export class Player extends EventEmitter {
 
         if (!song.stream) return this.emit('done');
 
-        this.dispatcher = this.connection.play(song.stream);
+        this.dispatcher = this.connection.play(song.stream, {
+            highWaterMark: 24
+        });
 
         this.playing = true;
         this.emit('playing', this.dispatcher);
@@ -204,7 +208,7 @@ export class Player extends EventEmitter {
     shutdown() {
         this.emit('goodbye');
         this.connection?.disconnect();
-        players.delete(this.connection.channel.guild);
+        players.delete(this.guild);
     }
     duration() {
         return this.dispatcher.streamTime;
