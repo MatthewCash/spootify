@@ -1,5 +1,6 @@
 {
     "name": "spootify-bot",
+    "codename": "WAVEFORM",
     "version": "1.0.0",
     "description": "Spootify bot",
     "main": "main.js",
@@ -19,7 +20,6 @@
         "discord.js": "^12.5.0",
         "erlpack": "github:discordapp/erlpack#ff01390",
         "fluent-ffmpeg": "^2.1.2",
-        "fs": "0.0.1-security",
         "imdb-api": "^4.4.1",
         "jimp": "^0.16.1",
         "libsodium-wrappers": "^0.7.8",
