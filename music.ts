@@ -140,7 +140,8 @@ export class Player extends EventEmitter {
         if (!song.stream) return this.emit('done');
 
         this.dispatcher = this.connection.play(song.stream, {
-            highWaterMark: 24
+            highWaterMark: 50,
+            volume: false
         });
 
         this.playing = true;
