@@ -1,5 +1,5 @@
 import Discord from 'discord.js';
-import { promises as fs } from 'fs';
+import fs from 'fs/promises';
 import os from 'os';
 
 const bot = new Discord.Client();
@@ -98,7 +98,10 @@ const sendStartupLog = () => {
             }
         ],
         footer: {
-            iconURL: bot.users.resolve('707005983955877969').displayAvatarURL(),
+            iconURL: bot.guilds.cache
+                .first()
+                .members.resolve('707005983955877969')
+                .user.displayAvatarURL(),
             text: `REV() Automated Intelligence`
         }
     });
