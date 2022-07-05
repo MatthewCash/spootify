@@ -11,7 +11,7 @@
     "author": "Matthew_Cash",
     "license": "ISC",
     "dependencies": {
-        "@discordjs/opus": "^0.3.3",
+        "@discordjs/opus": "^0.8.0",
         "@types/node": "^14.14.35",
         "@types/node-fetch": "^2.5.8",
         "@types/yt-search": "^2.3.0",
